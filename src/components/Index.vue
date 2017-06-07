@@ -14,7 +14,7 @@
       <Row :gutter="gutter">
         <Col span="24">
           <div class="ztable">
-            <ZTable v-on:reqType="getTableStatus" :gutter="gutter" :height="tableHeight"></ZTable>
+            <ZTable v-on:tableStatus="getTableStatus" :gutter="gutter" :height="tableHeight"></ZTable>
           </div>
         </Col>
       </Row>

@@ -6,11 +6,11 @@
       </Col>
       <Col span="4">
         <div class="data-zoom">
-          <span class="icon icon-arrow-left back" @click.stop="back"></span>
           <h2>{{this.countyProps.areaName}}网格化数据统计</h2>
           <p class="data-box" v-for="(item,index) in countyByEnt" v-if="index > 0?true:false">
             <span class="box-font"><strong>{{item.entType}}</strong></span><span class="box-num">{{item.count}}</span>
           </p>
+          <span class="icon icon-arrow-left back" @click.stop="back"><span class="back-font">返回</span></span>
         </div>
       </Col>
     </Row>

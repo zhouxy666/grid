@@ -3,7 +3,7 @@
  */
 module.exports = {
   build: {
-    host: 'http://60.222.220.223:30001',
+    host: 'http://60.222.220.223:8001/grid',
     port: '80'
   },
   AREACODE: {
@@ -45,5 +45,31 @@ module.exports = {
     KGJJKFQ: [111.071911, 35.101332],
     FLDJJKFQ: [110.338441, 34.634367],
     JXJJKFQ: [111.667846, 35.514639]
+  },
+  markersMap(name) {
+    let mapName = ''
+    switch (name) {
+      case 'ent_name':
+        mapName = '企业名称'
+        break
+      case 'ent_type':
+        mapName = '企业类型'
+        break
+      case 'legal':
+        mapName = '联系方式'
+        break
+      case 'principal':
+        mapName = '企业负责人'
+        break
+      case 'ent_site':
+        mapName = '企业地址'
+        break
+      case 'ent_business':
+        mapName = '主营业务'
+        break
+      default:
+        break
+    }
+    return mapName
   }
 }

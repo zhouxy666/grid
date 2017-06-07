@@ -17,10 +17,10 @@
       </Row>
     </div>
     <div class="countyTable" v-show="showCounty">
-      <County v-on:countyBack = "countyBack" :countyProps="countyProps" v-on:stationRisk="showStationRisk" :height="height" :gutter="gutter" :reqType="reqType"></County>
+      <County v-on:countyBack = "countyBack" :countyProps="countyProps" v-on:stationRisk="showStationRisk" :height="height" :gutter="gutter" :reqType="tableStatus.reqType"></County>
     </div>
     <div class="RiskTable" v-show="showRisk">
-      <Risk v-on:riskBack = "riskBack" :riskProps="riskProps" :height="height" :gutter="gutter" :reqType="reqType"></Risk>
+      <Risk v-on:riskBack = "riskBack" v-on:pageStatus="pageStatus" :riskProps="riskProps" :height="height" :gutter="gutter" :reqType="reqType"></Risk>
     </div>
   </div>
 </template>
@@ -58,13 +58,23 @@
           entName: '',
           entType: ''
         },
-        areaName: '',
-        areaCode: '',
-        entName: '',
-        entType: '',
-        clickOnArea: false,
-        clickOnEnt: false,
-        clickOnStationEnt: false,
+        tableStatus: {
+          areaName: '',
+          areaCode: '',
+          entName: '',
+          entType: '',
+          pageOption: {
+            page: 1,
+            limit: 10
+          },
+          clickOnArea: false,
+          clickOnEnt: false,
+          clickOnStationEnt: false,
+          clickOnPage: false,
+          reqType: 0,
+          pageType: 0
+        },
+        reqType: 0,
         showRisk: false,
         showCounty: false,
         showStation: false,
@@ -262,47 +272,57 @@
           data: []
         },
         total: 0,
-        reqType: 0,
         countyByEnt: []
       }
     },
     watch: {
-      'reqType'() {
-        let params = {
-          reqType: this.reqType,
-          areaName: this.areaName,
-          areaCode: this.areaCode,
-          entName: this.entName,
-          entType: this.entType,
-          clickOnArea: this.clickOnArea,
-          clickOnEnt: this.clickOnEnt,
-          clickOnStationEnt: this.clickOnStationEnt
+      tableStatus: {
+        deep: true,
+        handler() {
+          this.$emit('tableStatus', this.tableStatus)
         }
-        this.$emit('reqType', params)
       }
     },
     methods: {
       countyBack () {
-        this.areaName = '运城市'
-        this.areaCode = config.AREACODE.YCS
+        this.reqType = 0
+        this.tableStatus = {
+          areaName: '运城市',
+          areaCode: config.AREACODE.YCS,
+          pageOption: {
+            page: 1,
+            limit: 10
+          },
+          reqType: 0,
+          clickOnEnt: false,
+          clickOnStationEnt: false,
+          clickOnArea: false
+        }
         this.showRisk = false
         this.showCounty = false
         this.showIndex = true
-        this.reqType = 0
-        this.clickOnEnt = false
-        this.clickOnStationEnt = false
-        this.clickOnArea = false
       },
       riskBack () {
-        this.areaName = '运城市'
-        this.areaCode = config.AREACODE.YCS
+        this.reqType = 0
+        this.tableStatus = {
+          areaName: '运城市',
+          areaCode: config.AREACODE.YCS,
+          pageOption: {
+            page: 1,
+            limit: 10
+          },
+          reqType: 0,
+          clickOnEnt: false,
+          clickOnStationEnt: false,
+          clickOnArea: false
+        }
         this.showRisk = false
         this.showCounty = false
         this.showIndex = true
-        this.reqType = 0
-        this.clickOnEnt = false
-        this.clickOnStationEnt = false
-        this.clickOnArea = false
+      },
+      pageStatus(params) {
+        this.tableStatus.pageOption = params.pageOption
+        this.tableStatus.clickOnPage = params.clickOnPage
       },
       showStationRisk(params) {
         let areaCode = params.areaCode || ''
@@ -310,18 +330,26 @@
         let entType = params.entType || ''
         let entName = params.entName || ''
         let reqType = params.reqType
-        this.reqType = reqType
-        this.areaCode = areaCode
-        this.areaName = areaName
-        this.entType = entType
-        this.entName = entName
-        this.clickOnEnt = true
-        this.clickOnStationEnt = true
-        this.clickOnArea = false
+        // 更新上传状态
+        this.tableStatus.reqType = reqType
+        this.tableStatus.areaCode = areaCode
+        this.tableStatus.areaName = areaName
+        this.tableStatus.entType = entType
+        this.tableStatus.entName = entName
+        this.tableStatus.pageOption = {
+          page: 1,
+          limit: 10
+        }
+        // 控制组件显示状态
+        this.tableStatus.clickOnEnt = true
+        this.tableStatus.clickOnStationEnt = true
+        this.tableStatus.clickOnArea = false
+        // 更新risk组件的状态
         this.riskProps.areaCode = areaCode
         this.riskProps.areaName = areaName
         this.riskProps.entType = entType
         this.riskProps.entName = entName
+        this.reqType = 2
         // 切换组件状态
         this.showRisk = true
         this.showCounty = false
@@ -333,18 +361,24 @@
         let areaName = params.row.area || ''
         let entName = params.column.title || ''
         let reqType = this.reqType + 1
-        this.reqType = reqType
-        this.areaCode = areaCode
-        this.areaName = areaName
-        this.entType = entType
-        this.entName = entName
-        this.clickOnEnt = true
-        this.clickOnStationEnt = false
-        this.clickOnArea = false
+        this.tableStatus.reqType = reqType
+        this.tableStatus.areaCode = areaCode
+        this.tableStatus.areaName = areaName
+        this.tableStatus.entType = entType
+        this.tableStatus.entName = entName
+        this.tableStatus.pageOption = {
+          page: 1,
+          limit: 10
+        }
+        this.tableStatus.clickOnEnt = true
+        this.tableStatus.clickOnStationEnt = false
+        this.tableStatus.clickOnArea = false
+        // 更新risk组件状态
         this.riskProps.areaCode = areaCode
         this.riskProps.entType = entType
         this.riskProps.areaName = areaName
         this.riskProps.entName = entName
+        this.reqType = reqType
         this.showRisk = true
         this.showIndex = false
         this.showCounty = false
@@ -355,16 +389,23 @@
         let entType = params.entType || ''
         let entName = params.entName || ''
         let reqType = this.reqType + 1
-        this.reqType = reqType
-        this.areaCode = areaCode
-        this.areaName = areaName
-        this.entType = entType
-        this.entName = entName
-        this.clickOnEnt = false
-        this.clickOnStationEnt = false
-        this.clickOnArea = true
+        this.tableStatus.areaCode = areaCode
+        this.tableStatus.areaName = areaName
+        this.tableStatus.entType = entType
+        this.tableStatus.entName = entName
+        this.tableStatus.pageOption = {
+          page: 1,
+          limit: 10
+        }
+        this.tableStatus.clickOnEnt = false
+        this.tableStatus.clickOnStationEnt = false
+        this.tableStatus.clickOnArea = true
+        this.tableStatus.reqType = reqType
+        // 更新county组件状态
         this.countyProps.areaCode = areaCode
         this.countyProps.areaName = areaName
+        this.reqType = reqType
+        // 控制组件的显示隐藏
         this.showIndex = false
         this.showRisk = false
         this.showCounty = true

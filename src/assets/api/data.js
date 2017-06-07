@@ -61,9 +61,17 @@ module.exports = {
     }
   },
   ent: {
-    des: '企业详情',
-    api: (name) => {
-      return www + '/index.php/enterprise/index?name=' + name
+    index_api: {
+      des: '区县的企业详情',
+      api: (params) => {
+        return www + '/index.php/enterprise/index?areaName=' + params.areaName + '&entName=' + params.entName + '&page=' + params.page + '&limit=' + params.limit
+      }
+    },
+    station_api: {
+      des: '站所的企业详情',
+      api: (params) => {
+        return www + '/index.php/enterprise/station?areaName=' + params.areaName + '&entName=' + params.entName + '&page=' + params.page + '&limit=' + params.limit
+      }
     }
   }
 }

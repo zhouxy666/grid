@@ -6,18 +6,10 @@
       </Col>
       <Col span="4">
         <div class="data-zoom">
-          <span class="icon icon-arrow-left back" @click.stop="back"></span>
-          <h5>{{riskProps.areaName}}风险等级统计情况</h5>
-          <p>{{riskProps.areaCode}}</p>
-          <p>{{riskProps.entType}}</p>
-          <p>{{riskProps.areaName}}</p>
-          <p>{{riskProps.townName}}</p>
-          <p>{{showReqMessage}}</p>
-          <p>{{riskProps.entName}}</p>
-          <p>当前状态:{{reqType}}</p>
-          <p>{{widthRadio}}</p>
-          <p>{{windowWidth}}</p>
+          <h3>{{riskProps.areaName}}风险等级统计表</h3>
+          <p>企业类型 ：{{riskProps.entName}}</p>
         </div>
+      <span class="icon icon-arrow-left back" @click.stop="back"><span class="back-font">返回</span></span>
       </Col>
     </Row>
     <Law v-show="showLaw" :lawData="lawData" v-on:Lawback="Lawback" :height="height" :gutter="gutter"></Law>
@@ -120,7 +112,7 @@
             }],
           data: []
         },
-        pageOptions: {
+        pageOption: {
           page: 1,
           limit: 10
         },
@@ -143,11 +135,10 @@
       }
     },
     watch: {
-      riskProps: {
-        deep: true,
-        handler () {
+      'reqType'() {
+        if (this.reqType === 1 || this.reqType === 2) {
           // 请求数据
-          this.request(this.riskProps.areaName, this.riskProps.entName, this.pageOptions.page, this.pageOptions.limit).then((data) => {
+          this.request(this.riskProps.areaName, this.riskProps.entName, this.pageOption.page, this.pageOption.limit).then((data) => {
             this.RiskTable.data = data.result
             this.total = Number(data.total)
           })
@@ -199,15 +190,25 @@
         })
       },
       pageChange(page) {
-        this.pageOptions.page = page
-        this.request(this.riskProps.areaName, this.riskProps.entName, page, this.pageOptions.limit).then((data) => {
+        this.pageOption.page = page
+        let pageStatus = {
+          pageOption: this.pageOption,
+          clickOnPage: true
+        }
+        this.$emit('pageStatus', pageStatus)
+        this.request(this.riskProps.areaName, this.riskProps.entName, page, this.pageOption.limit).then((data) => {
           this.RiskTable.data = data.result
           this.total = Number(data.total)
         })
       },
       limitChange(limit) {
-        this.pageOptions.limit = limit
-        this.request(this.riskProps.areaName, this.riskProps.entName, this.pageOptions.page, limit).then((data) => {
+        this.pageOption.limit = limit
+        let pageStatus = {
+          pageOption: this.pageOption,
+          clickOnPage: true
+        }
+        this.$emit('pageStatus', pageStatus)
+        this.request(this.riskProps.areaName, this.riskProps.entName, this.pageOption.page, limit).then((data) => {
           this.RiskTable.data = data.result
           this.total = Number(data.total)
         })
@@ -225,6 +226,13 @@
     width 100%
   .back
     font-size 20px
+    vertical-align top
+    .back-font
+      font-size 12px
+      line-height 20px
+      margin-left 5px
+      font-weight 700
+      vertical-align top
     &:hover
       color rgb(240,20,20)
       cursor pointer

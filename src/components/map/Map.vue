@@ -2,7 +2,11 @@
   <div>
     <div class="map-wrapper">
       <div id="map-container" :style="{height: mapHeight + 'px'}"></div>
-      <Button type="primary" class="map-btn" @click="mapBtn" v-show="showEntList">显示企业</Button>
+      <Button type="primary" class="map-btn" @click="mapBtn" v-show="showEntList">{{btnMessage}}</Button>
+      <div class="spin" v-show="showSpin">
+        <Spin size="large"></Spin>
+        <span>加载中...</span>
+      </div>
     </div>
   </div>
 </template>
@@ -61,12 +65,17 @@
         },
         infoContent: {},
         showEntList: false,
-        windowHeight: 300
+        showSpin: false,
+        windowHeight: 300,
+        isShowMarkers: true
       }
     },
     computed: {
       mapHeight() {
         return 300 * this.windowHeight / 661
+      },
+      btnMessage() {
+        return this.isShowMarkers ? '隐藏点位' : '显示点位'
       }
     },
     watch: {
@@ -80,6 +89,8 @@
             * 1. 显示 运城市 行政区划边界
             * 2. 显示 不同企业类型的数量；鼠标在地图上移动时候显示
             * */
+            // 删除地图标记点
+            this.map.clearMap()
             let areaCode = tableStatus.areaCode
             // 隐藏企业列表显示按钮
             this.showEntList = false
@@ -150,8 +161,10 @@
               // 请求数据
               let areaName = this.tableStatus.areaName
               let url = data.town.api(areaName)
+              this.showSpin = true
               this.$http.jsonp(url).then((res) => {
                 if (res.status) {
+                  this.showSpin = false
                   let infoContent = []
                   for (let i = 0; i < res.body.data.result.length; i++) {
                     let temp = {}
@@ -203,6 +216,7 @@
              * 2. 显示 区县 企业列表的标记点 撒点
              * 3. 点击 某个标记点 显示企业基本信息
              * */
+            if (!tableStatus.areaCode) return
             this.showEntList = true
             let areaCode = tableStatus.areaCode
             this.districtSearch(areaCode.substring(0, 6)).then((bounds) => {
@@ -210,27 +224,158 @@
               this.map.clearMap()
               this.addpolygon(bounds)
               this.polygon.setMap(this.map)
-//        // 绑定click事件
-//        this.polygon.on('click', () => {
-//          this.infoWindow.setContent('123132')
-//          // 获取当前点击的经纬度
-//          let clickPosition = [111.230557, 35.361209]
-//          this.infoWindow.open(this.map, clickPosition)
-//        })
               // 调整视图窗口
               this.map.setFitView()
+            }).then(() => {
+              // 请求markers数据
+              let url = data.ent.index_api.api({
+                areaName: tableStatus.areaName,
+                entName: tableStatus.entName,
+                page: tableStatus.pageOption.page,
+                limit: tableStatus.pageOption.limit
+              })
+              this.showSpin = true
+              this.$http.jsonp(url).then((res) => {
+                if (res.body.status) {
+                  this.showSpin = false
+                  this.handReqDatas(res.body.data)
+                  return
+                }
+                if (!res.body.status) {
+                  ('error')
+                  this.showEntList = false
+                  return
+                }
+              })
             })
           }
-          if (tableStatus.reqType === 2 && tableStatus.clickOnStationEnt) {
+          if (tableStatus.reqType === 2) {
             /*
-            * 当前状态 站所风险等级 企业列表
-            * 1. 显示 企业列表的标记点 撒点
-            * 2. 点击 某个标记点 显示企业基本信息
-            * 3. 显示 按钮
-            * */
+             * 当前状态为 站所风险等级 企业列表
+             * 1. 显示 区县 行政区划边界
+             * 2. 显示 区县 企业列表的标记点 撒点
+             * 3. 点击 某个标记点 显示企业基本信息
+             * */
+            if (!tableStatus.areaCode) return
             this.showEntList = true
-            this.map.clearMap()
+            let areaCode = tableStatus.areaCode
+            this.districtSearch(areaCode.substring(0, 6)).then((bounds) => {
+              // 调用polygon绘制边界
+              this.map.clearMap()
+              this.addpolygon(bounds)
+              this.polygon.setMap(this.map)
+              // 调整视图窗口
+              this.map.setFitView()
+            }).then(() => {
+              // 请求markers数据
+              let url = data.ent.station_api.api({
+                areaName: tableStatus.areaName,
+                entName: tableStatus.entName,
+                page: tableStatus.pageOption.page,
+                limit: tableStatus.pageOption.limit
+              })
+              this.showSpin = true
+              this.$http.jsonp(url).then((res) => {
+                if (res.body.status) {
+                  this.showSpin = false
+                  this.handReqDatas(res.body.data)
+                  return
+                }
+                if (!res.body.status) {
+                  ('error')
+                  this.showEntList = false
+                  return
+                }
+              })
+            })
           }
+        }
+      },
+      'tableStatus.pageOption.page'() {
+        let tableStatus = this.tableStatus
+        if (tableStatus.reqType === 0) {
+          this.showEntList = false
+          this.map.clearMap()
+          return
+        }
+        if (tableStatus.pageType === 3) {
+          /*
+           * 当前状态为 区县企业列表数据 pagebar
+           * 1. 显示 区县 行政区划边界
+           * 2. 显示 区县 企业列表的标记点 撒点
+           * 3. 点击 某个标记点 显示企业基本信息
+           * */
+          this.showEntList = true
+          let areaCode = tableStatus.areaCode
+          this.districtSearch(areaCode.substring(0, 6)).then((bounds) => {
+            // 调用polygon绘制边界
+            this.map.clearMap()
+            this.addpolygon(bounds)
+            this.polygon.setMap(this.map)
+            // 调整视图窗口
+            this.map.setFitView()
+          }).then(() => {
+            // 请求markers数据
+            let url = data.ent.index_api.api({
+              areaName: tableStatus.areaName,
+              entName: tableStatus.entName,
+              page: tableStatus.pageOption.page,
+              limit: tableStatus.pageOption.limit
+            })
+            this.showSpin = true
+            this.$http.jsonp(url).then((res) => {
+              this.showSpin = false
+              if (res.body.status) {
+                this.handReqDatas(res.body.data)
+                return
+              }
+              if (!res.body.status) {
+                this.showEntList = false
+                return
+              }
+            })
+          })
+          return
+        }
+        if (tableStatus.pageType === 4) {
+          /*
+           * 当前状态为 站所的企业列表数据 pargebar触发
+           * 1. 显示 区县 行政区划边界
+           * 2. 显示 区县 企业列表的标记点 撒点
+           * 3. 点击 某个标记点 显示企业基本信息
+           * */
+          this.showEntList = true
+          let areaCode = tableStatus.areaCode
+          this.districtSearch(areaCode.substring(0, 6)).then((bounds) => {
+            // 调用polygon绘制边界
+            this.map.clearMap()
+            this.addpolygon(bounds)
+            this.polygon.setMap(this.map)
+            // 调整视图窗口
+            this.map.setFitView()
+          }).then(() => {
+            // 请求markers数据
+            let url = data.ent.station_api.api({
+              areaName: tableStatus.areaName,
+              entName: tableStatus.entName,
+              page: tableStatus.pageOption.page,
+              limit: tableStatus.pageOption.limit
+            })
+            this.showSpin = true
+            this.$http.jsonp(url).then((res) => {
+              if (res.body.status) {
+                this.showSpin = false
+                this.handReqDatas(res.body.data)
+                return
+              }
+              if (!res.body.status) {
+                console.log('error')
+                this.showEntList = false
+                return
+              }
+            })
+          })
+          return
         }
       }
     },
@@ -274,11 +419,15 @@
         let infoWindow = new AMap.InfoWindow(this.infoWindowOptions)
         this.infoWindow = infoWindow
       },
-      addMarkers (positions) {
+      addMarkers (positions, content) {
         // 初始化 markers 对象
         this.markers = []
         for (let i = 0; i < positions.length; i++) {
           let marker = new AMap.Marker(this.markOptions(positions[i]))
+          marker.on('click', () => {
+            this.infoWindow.setContent(content)
+            this.infoWindow.open(this.map, marker.getPosition())
+          })
           this.markers.push(marker)
         }
       },
@@ -312,7 +461,54 @@
         })
       },
       mapBtn() {
-        alert(1)
+        this.isShowMarkers = !this.isShowMarkers
+        if (this.isShowMarkers) {
+          this.markers.forEach((marker) => {
+            marker.show()
+          })
+          return
+        }
+        if (!this.isShowMarkers) {
+          this.markers.forEach((marker) => {
+            marker.hide()
+            this.infoWindow.close()
+          })
+          return
+        }
+      },
+      handReqDatas(datas) {
+        return new Promise((resolve, reject) => {
+          for (let i = 0; i < datas.length; i++) {
+            if (datas[i].position[0]) {
+              let marker = new AMap.Marker(this.markOptions(datas[i].position))
+              let htmlDatas = {}
+              let html = []
+              for (let item in datas[i]) {
+                if (item !== 'position' && datas[i][item] && item !== 'row_num') {
+                  let itemName = config.markersMap(item)
+                  htmlDatas[itemName] = datas[i][item]
+                }
+              }
+              html = this.renderView(htmlDatas)
+              marker.on('click', () => {
+                this.infoWindow.setContent(html.join(''))
+                this.infoWindow.open(this.map, marker.getPosition())
+              })
+              this.markers.push(marker)
+            }
+          }
+        })
+      },
+      renderView(datas) {
+        let html = []
+        html.push('<div>')
+        for (let item in datas) {
+          if (datas[item]) {
+            html.push(`<p>${item} : ${datas[item]}</p>`)
+          }
+        }
+        html.push('</div>')
+        return html
       }
     }
   }
@@ -321,6 +517,10 @@
 <style lang="stylus" rel="stylesheet/stylus">
   .map-wrapper
     position relative
+    .spin
+      position absolute
+      top 50px
+      left 50px
     .map-btn
       position absolute
       bottom 10px
